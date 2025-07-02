@@ -1,0 +1,1942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Process & Data Insights Dashboard</title>
+    <!-- Tailwind CSS CDN for easy styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter font for a clean look -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+        }
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e0e0e0;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #a0a0a0;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #808080;
+        }
+        /* Modal styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 800px;
+            position: relative;
+        }
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        /* Tab styles */
+        .tab-button {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            background-color: #e0e7ff; /* Light blue for inactive */
+            color: #4338ca; /* Indigo text */
+            position: relative; /* For 3D effect */
+            top: 0;
+            left: 0;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2); /* Initial 3D shadow */
+        }
+        .tab-button:active {
+            top: 2px; /* Press down effect */
+            box-shadow: 0 2px 0 rgba(0,0,0,0.2); /* Smaller shadow when pressed */
+        }
+
+        /* Active tab button styles */
+        .tab-button.active {
+            border-bottom: 3px solid;
+            box-shadow: none; /* Remove 3D shadow when active/selected */
+            top: 0; /* Reset top position */
+        }
+
+        /* Specific active colors for each tab button */
+        .tab-button.active.process-tab { background-color: #3b82f6; color: white; border-color: #3b82f6; } /* Blue */
+        .tab-button.active.data-tab { background-color: #22c55e; color: white; border-color: #22c55e; } /* Green */
+        .tab-button.active.project-tab { background-color: #8b5cf6; color: white; border-color: #8b5cf6; } /* Purple */
+        .tab-button.active.updates-tab { background-color: #ef4444; color: white; border-color: #ef4444; } /* Red */
+        .tab-button.active.dashboard-tab { background-color: #f97316; color: white; border-color: #f97316; } /* Orange */
+        .tab-button.active.help-tab { background-color: #14b8a6; color: white; border-color: #14b8a6; } /* Teal */
+
+
+        .tab-content {
+            display: none;
+            padding: 24px;
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            min-height: 500px; /* Ensure content area has some height */
+            background-color: #fff; /* Default white background */
+            transition: background-color 0.3s ease; /* Smooth transition for background */
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Specific background gradients for each tab content */
+        #processLibrary.active { background: linear-gradient(to bottom right, #ffffff, #e0e7ff); } /* White to light blue */
+        #dataAnalysis.active { background: linear-gradient(to bottom right, #ffffff, #dcfce7); } /* White to light green */
+        #projectTracker.active { background: linear-gradient(to bottom right, #ffffff, #ede9fe); } /* White to light purple */
+        #updatesLog.active { background: linear-gradient(to bottom right, #ffffff, #fee2e2); } /* White to light red */
+        #dashboardOverview.active { background: linear-gradient(to bottom right, #ffffff, #ffedd5); } /* White to light orange */
+        #helpTips.active { background: linear-gradient(to bottom right, #ffffff, #ccfbf1); } /* White to light teal */
+
+
+        /* Table styling */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            table-layout: auto; /* Allow columns to size based on content */
+        }
+        .data-table th, .data-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb; /* Gray-200 */
+            overflow: hidden; /* Still useful for general overflow management */
+            text-overflow: ellipsis; /* Default ellipsis for non-wrapping text */
+            white-space: nowrap; /* Default to no-wrap for most cells */
+        }
+        .data-table th {
+            background-color: #f9fafb; /* Gray-50 */
+            font-weight: 600;
+            cursor: pointer;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .data-table th:hover {
+            background-color: #f3f4f6; /* Gray-100 */
+        }
+        .data-table tbody tr {
+            cursor: pointer; /* Make rows clickable */
+        }
+        .data-table tbody tr:hover {
+            background-color: #f5f5f5; /* Light hover effect */
+        }
+        /* Specific column widths for better layout */
+        .data-table th:nth-child(1), .data-table td:nth-child(1) { min-width: 150px; } /* Name/Project Name */
+        .data-table th:nth-child(2), .data-table td:nth-child(2) { min-width: 100px; } /* Dates */
+        .data-table th:nth-child(3), .data-table td:nth-child(3) { min-width: 80px; } /* Duration/Status */
+        .data-table th:last-child, .data-table td:last-child { min-width: 140px; } /* Actions - ensure space for two buttons */
+        .data-table td .flex { flex-wrap: nowrap; } /* Ensure buttons stay in a line */
+
+        /* Class for text that should wrap */
+        .wrap-text {
+            white-space: normal;
+            text-overflow: initial; /* Remove ellipsis for wrapping text */
+        }
+
+
+        /* Conditional Formatting */
+        .status-to-do { background-color: #fef3c7; } /* Yellow-100 */
+        .status-in-progress { background-color: #bfdbfe; } /* Blue-200 */
+        .status-awaiting-feedback { background-color: #fde68a; } /* Yellow-300 */
+        .status-done { background-color: #d1fae5; } /* Green-100 */
+
+        .deadline-urgent { background-color: #fee2e2; } /* Red-100 */
+        .deadline-warning { background-color: #ffedd5; } /* Orange-100 */
+        .special-attention { background-color: #fecaca; font-weight: bold; } /* Red-200 */
+
+        /* Notification bar */
+        #notificationBar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #f97316; /* Orange-500 */
+            color: white;
+            text-align: center;
+            padding: 10px;
+            z-index: 1001;
+            display: none; /* Hidden by default */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            font-weight: 500;
+        }
+        #notificationBar.warning {
+            background-color: #f97316; /* Orange-500 */
+        }
+        #notificationBar.urgent {
+            background-color: #ef4444; /* Red-500 */
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <div id="notificationBar">
+        <!-- Notifications will appear here -->
+    </div>
+    <header class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4 shadow-lg">
+        <div class="container mx-auto flex flex-wrap justify-between items-center gap-4">
+            <h1 class="text-3xl font-bold tracking-tight">Process & Data Insights Dashboard</h1>
+            <div class="flex flex-wrap items-center space-x-2 sm:space-x-4">
+                <button id="loadSampleDataBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                    Load Sample Data
+                </button>
+                <button id="clearAllDataBtn" class="bg-red-500 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                    Clear All Data
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-6 flex-grow">
+        <!-- Tab Navigation -->
+        <div class="flex border-b border-gray-200 mb-6">
+            <button class="tab-button process-tab" onclick="openTab('processLibrary', event)">Process Library</button>
+            <button class="tab-button data-tab" onclick="openTab('dataAnalysis', event)">Data Analysis Notes</button>
+            <button class="tab-button project-tab" onclick="openTab('projectTracker', event)">Project & Task Tracker</button>
+            <button class="tab-button updates-tab" onclick="openTab('updatesLog', event)">Updates Log</button>
+            <button class="tab-button dashboard-tab" onclick="openTab('dashboardOverview', event)">Dashboard Overview</button>
+            <button class="tab-button help-tab" onclick="openTab('helpTips', event)">Help & Tips</button>
+        </div>
+
+        <!-- Tab Content - Process Library -->
+        <div id="processLibrary" class="tab-content rounded-xl">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">Process Library</h2>
+            <form id="processForm" class="mb-6 space-y-3 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                <input type="hidden" id="processId">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="processName" class="block text-sm font-medium text-gray-700">Process Name</label>
+                        <input type="text" id="processName" placeholder="e.g., Claims Processing" required
+                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="processStartDate" class="block text-sm font-medium text-gray-700">Start Date</label>
+                        <input type="date" id="processStartDate"
+                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label for="processDescription" class="block text-sm font-medium text-gray-700">Description</label>
+                    <textarea id="processDescription" placeholder="Brief overview of the process..." rows="2"
+                              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
+                </div>
+                <div>
+                    <label for="processRules" class="block text-sm font-medium text-gray-700">Business Rules</label>
+                    <textarea id="processRules" placeholder="Key rules associated with the process..." rows="2"
+                              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="processDuration" class="block text-sm font-medium text-gray-700">Typical Duration (Days)</label>
+                        <input type="number" id="processDuration" placeholder="e.g., 5" min="0"
+                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="processDocLink" class="block text-sm font-medium text-gray-700">Documentation Link</label>
+                        <input type="url" id="processDocLink" placeholder="e.g., https://company.com/docs/claims"
+                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="specialAttentionNeeded" class="block text-sm font-medium text-gray-700">Special Attention Needed?</label>
+                        <select id="specialAttentionNeeded"
+                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <option value="No">No</option>
+                            <option value="Yes">Yes</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="responsiblePerson" class="block text-sm font-medium text-gray-700">Responsible Person (for attention)</label>
+                        <input type="text" id="responsiblePerson" placeholder="e.g., Jane Doe"
+                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label for="deadlineToResolve" class="block text-sm font-medium text-gray-700">Deadline to Resolve (if attention needed)</label>
+                    <input type="date" id="deadlineToResolve"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                    Add/Update Process
+                </button>
+            </form>
+            <div class="flex space-x-2 mb-4">
+                <button onclick="exportData(dashboardData.processes, 'processes', 'csv')" class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm py-1 px-3 rounded-md">Export CSV</button>
+                <button onclick="exportData(dashboardData.processes, 'processes', 'txt')" class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm py-1 px-3 rounded-md">Export TXT</button>
+                <label class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm py-1 px-3 rounded-md cursor-pointer">
+                    Import CSV
+                    <input type="file" accept=".csv" onchange="importData(event, 'processes')" class="hidden">
+                </label>
+            </div>
+            <div class="mb-4">
+                <input type="text" id="processSearch" onkeyup="filterTable('processList', this.value)" placeholder="Search processes..."
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div id="processList" class="overflow-x-auto">
+                <!-- Process table will be rendered here -->
+            </div>
+        </div>
+
+        <!-- Tab Content - Data Analysis Notes & Trends -->
+        <div id="dataAnalysis" class="tab-content rounded-xl">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">Data Analysis Notes & Trends</h2>
+            <form id="dataNoteForm" class="mb-6 space-y-3 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                <input type="hidden" id="dataNoteId">
+                <div>
+                    <label for="dataNoteDate" class="block text-sm font-medium text-gray-700">Date</label>
+                    <input type="date" id="dataNoteDate" required
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                </div>
+                <div>
+                    <label for="dataSource" class="block text-sm font-medium text-gray-700">Data Source/Report</label>
+                    <input type="text" id="dataSource" placeholder="e.g., Q2 Performance Report" required
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                </div>
+                <div>
+                    <label for="keyFindings" class="block text-sm font-medium text-gray-700">Key Findings/Trends</label>
+                    <textarea id="keyFindings" placeholder="Summary of observations..." rows="3" required
+                              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
+                </div>
+                <div>
+                    <label for="potentialRootCause" class="block text-sm font-medium text-gray-700">Potential Root Cause</label>
+                    <textarea id="potentialRootCause" placeholder="Initial thoughts on why a trend is occurring..." rows="2"
+                              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
+                </div>
+                <div>
+                    <label for="associatedProcess" class="block text-sm font-medium text-gray-700">Associated Process (ID/Name)</label>
+                    <input type="text" id="associatedProcess" placeholder="e.g., Claims Processing (ID: P001)"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                </div>
+                <div>
+                    <label for="dataActionItems" class="block text-sm font-medium text-gray-700">Action Items</label>
+                    <textarea id="dataActionItems" placeholder="Next steps for investigation or reporting..." rows="2"
+                              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                    Add/Update Data Note
+                </button>
+            </form>
+            <div class="flex space-x-2 mb-4">
+                <button onclick="exportData(dashboardData.dataNotes, 'data_notes', 'csv')" class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm py-1 px-3 rounded-md">Export CSV</button>
+                <button onclick="exportData(dashboardData.dataNotes, 'data_notes', 'txt')" class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm py-1 px-3 rounded-md">Export TXT</button>
+                <label class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm py-1 px-3 rounded-md cursor-pointer">
+                    Import CSV
+                    <input type="file" accept=".csv" onchange="importData(event, 'dataNotes')" class="hidden">
+                </label>
+            </div>
+            <div class="mb-4">
+                <input type="text" id="dataNoteSearch" onkeyup="filterTable('dataNoteList', this.value)" placeholder="Search data notes..."
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div id="dataNoteList" class="overflow-x-auto">
+                <!-- Data note table will be rendered here -->
+            </div>
+        </div>
+
+        <!-- Tab Content - Project & Task Tracker -->
+        <div id="projectTracker" class="tab-content rounded-xl">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">Project & Task Tracker</h2>
+            <form id="projectTaskForm" class="mb-6 space-y-3 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                <input type="hidden" id="projectId">
+                <div>
+                    <label for="projectName" class="block text-sm font-medium text-gray-700">Project Name</label>
+                    <input type="text" id="projectName" placeholder="e.g., System Migration Project" required
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                </div>
+                <div>
+                    <label for="taskDescription" class="block text-sm font-medium text-gray-700">Task Description</label>
+                    <textarea id="taskDescription" placeholder="What needs to be done..." rows="2" required
+                              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="taskDueDate" class="block text-sm font-medium text-gray-700">Due Date</label>
+                        <input type="date" id="taskDueDate"
+                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="taskStatus" class="block text-sm font-medium text-gray-700">Status</label>
+                        <select id="taskStatus"
+                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <option value="To Do">To Do</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Awaiting Feedback">Awaiting Feedback</option>
+                            <option value="Done">Done</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label for="taskStakeholders" class="block text-sm font-medium text-gray-700">Stakeholders</label>
+                    <input type="text" id="taskStakeholders" placeholder="e.g., John Doe, Jane Smith"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                    Add/Update Task
+                </button>
+            </form>
+            <div class="flex space-x-2 mb-4">
+                <button onclick="exportData(dashboardData.projects, 'projects', 'csv')" class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm py-1 px-3 rounded-md">Export CSV</button>
+                <button onclick="exportData(dashboardData.projects, 'projects', 'txt')" class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm py-1 px-3 rounded-md">Export TXT</button>
+                <label class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm py-1 px-3 rounded-md cursor-pointer">
+                    Import CSV
+                    <input type="file" accept=".csv" onchange="importData(event, 'projects')" class="hidden">
+                </label>
+            </div>
+            <div class="mb-4">
+                <input type="text" id="projectSearch" onkeyup="filterTable('projectTaskList', this.value)" placeholder="Search projects..."
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div id="projectTaskList" class="overflow-x-auto">
+                <!-- Project/Task table will be rendered here -->
+            </div>
+        </div>
+
+        <!-- Tab Content - Updates Log -->
+        <div id="updatesLog" class="tab-content rounded-xl">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">Updates Log</h2>
+            <form id="updateForm" class="mb-6 space-y-3 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                <input type="hidden" id="updateId">
+                <div>
+                    <label for="updateDate" class="block text-sm font-medium text-gray-700">Date of Update</label>
+                    <input type="date" id="updateDate" required
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                </div>
+                <div>
+                    <label for="updateDescription" class="block text-sm font-medium text-gray-700">Description of Change</label>
+                    <textarea id="updateDescription" placeholder="What was updated..." rows="3" required
+                              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
+                </div>
+                <div>
+                    <label for="updateImpact" class="block text-sm font-medium text-gray-700">Impact</label>
+                    <textarea id="updateImpact" placeholder="How it affects existing processes or data..." rows="2"
+                              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
+                </div>
+                <div>
+                    <label for="updateDocLink" class="block text-sm font-medium text-gray-700">Documentation Link</label>
+                    <input type="url" id="updateDocLink" placeholder="e.g., https://company.com/updates/2025-06-15"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                    Add/Update Update
+                </button>
+            </form>
+            <div class="flex space-x-2 mb-4">
+                <button onclick="exportData(dashboardData.updates, 'updates', 'csv')" class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm py-1 px-3 rounded-md">Export CSV</button>
+                <button onclick="exportData(dashboardData.updates, 'updates', 'txt')" class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm py-1 px-3 rounded-md">Export TXT</button>
+                <label class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm py-1 px-3 rounded-md cursor-pointer">
+                    Import CSV
+                    <input type="file" accept=".csv" onchange="importData(event, 'updates')" class="hidden">
+                </label>
+            </div>
+            <div class="mb-4">
+                <input type="text" id="updateSearch" onkeyup="filterTable('updateList', this.value)" placeholder="Search updates..."
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div id="updateList" class="overflow-x-auto">
+                <!-- Update table will be rendered here -->
+            </div>
+        </div>
+
+        <!-- Tab Content - Dashboard Overview -->
+        <div id="dashboardOverview" class="tab-content rounded-xl">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">Dashboard Reports & KPIs</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                <div class="bg-blue-50 p-4 rounded-lg shadow-sm border border-blue-200">
+                    <h3 class="text-lg font-medium text-blue-700">Total Processes</h3>
+                    <p id="kpiTotalProcesses" class="text-3xl font-bold text-blue-900 mt-2">0</p>
+                </div>
+                <div class="bg-green-50 p-4 rounded-lg shadow-sm border border-green-200">
+                    <h3 class="text-lg font-medium text-green-700">Total Data Notes</h3>
+                    <p id="kpiTotalDataNotes" class="text-3xl font-bold text-green-900 mt-2">0</p>
+                </div>
+                <div class="bg-purple-50 p-4 rounded-lg shadow-sm border border-purple-200">
+                    <h3 class="text-lg font-medium text-purple-700">Total Projects</h3>
+                    <p id="kpiTotalProjects" class="text-3xl font-bold text-purple-900 mt-2">0</p>
+                </div>
+                <div class="bg-yellow-50 p-4 rounded-lg shadow-sm border border-yellow-200">
+                    <h3 class="text-lg font-medium text-yellow-700">Projects To Do</h3>
+                    <p id="kpiProjectsToDo" class="text-3xl font-bold text-yellow-900 mt-2">0</p>
+                </div>
+                <div class="bg-indigo-50 p-4 rounded-lg shadow-sm border border-indigo-200">
+                    <h3 class="text-lg font-medium text-indigo-700">Projects In Progress</h3>
+                    <p id="kpiProjectsInProgress" class="text-3xl font-bold text-indigo-900 mt-2">0</p>
+                </div>
+                <div class="bg-teal-50 p-4 rounded-lg shadow-sm border border-teal-200">
+                    <h3 class="text-lg font-medium text-teal-700">Projects Done</h3>
+                    <p id="kpiProjectsDone" class="text-3xl font-bold text-teal-900 mt-2">0</p>
+                </div>
+                <div class="bg-red-50 p-4 rounded-lg shadow-sm border border-red-200">
+                    <h3 class="text-lg font-medium text-red-700">Processes Needing Attention</h3>
+                    <p id="kpiProcessesAttention" class="text-3xl font-bold text-red-900 mt-2">0</p>
+                </div>
+                <div class="bg-orange-50 p-4 rounded-lg shadow-sm border border-orange-200">
+                    <h3 class="text-lg font-medium text-orange-700">Data Notes (Last 7 Days)</h3>
+                    <p id="kpiDataNotesLast7Days" class="text-3xl font-bold text-orange-900 mt-2">0</p>
+                </div>
+                <div class="bg-purple-50 p-4 rounded-lg shadow-sm border border-purple-200">
+                    <h3 class="text-lg font-medium text-purple-700">Updates (Last 30 Days)</h3>
+                    <p id="kpiUpdatesLast30Days" class="text-3xl font-bold text-purple-900 mt-2">0</p>
+                </div>
+            </div>
+
+            <h3 class="text-xl font-semibold text-gray-800 mb-3 pb-2 border-b border-gray-200">Recent Activity</h3>
+            <div class="mb-4">
+                <input type="text" id="recentActivitySearch" onkeyup="filterRecentActivity(this.value)" placeholder="Search recent activities..."
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div id="recentActivityList" class="space-y-3">
+                <!-- Recent activities will be listed here -->
+                <p class="text-gray-500 text-sm">No recent activity.</p>
+            </div>
+
+            <h3 class="text-xl font-semibold text-gray-800 mt-6 mb-3 pb-2 border-b border-gray-200">Data Export/Import All</h3>
+            <div class="flex flex-wrap gap-3 mb-6">
+                <button onclick="exportData(dashboardData, 'all_dashboard_data', 'json')" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                    Export All Data (JSON)
+                </button>
+                <label class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md cursor-pointer transition duration-300 ease-in-out transform hover:scale-105">
+                    Import All Data (JSON)
+                    <input type="file" accept=".json" onchange="importData(event, 'all')" class="hidden">
+                </label>
+                <button onclick="window.print()" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                    Print Report (to PDF)
+                </button>
+            </div>
+        </div>
+
+        <!-- Tab Content - Help & Tips -->
+        <div id="helpTips" class="tab-content rounded-xl">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">Help & Tips</h2>
+            <div class="space-y-6">
+                <div class="bg-purple-50 p-5 rounded-lg shadow-sm border border-purple-200">
+                    <h3 class="text-lg font-semibold text-purple-700 mb-2">💡 Tip: Centralize Your Knowledge!</h3>
+                    <p class="text-gray-700">Use the <span class="font-medium text-blue-600">Process Library</span> to document all your departmental processes. This creates a single source of truth, making it easier to onboard new team members and ensure consistency. Remember to update the 'Last Updated' field for accurate tracking.</p>
+                </div>
+                <div class="bg-green-50 p-5 rounded-lg shadow-sm border border-green-200">
+                    <h3 class="text-lg font-semibold text-green-700 mb-2">📊 Analyze Trends with Data Notes!</h3>
+                    <p class="text-gray-700">Regularly add entries to <span class="font-medium text-green-600">Data Analysis Notes & Trends</span>. Over time, you'll build a rich history of observations that can reveal critical patterns and inform your root cause analysis. Use the search bar to quickly filter findings!</p>
+                </div>
+                <div class="bg-yellow-50 p-5 rounded-lg shadow-sm border border-yellow-200">
+                    <h3 class="text-lg font-semibold text-yellow-700 mb-2">⏳ Track Deadlines with Project Tracker!</h3>
+                    <p class="text-gray-700">Keep your projects and tasks organized in the <span class="font-medium text-indigo-600">Project & Task Tracker</span>. Pay attention to the color coding: <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Red for Urgent Deadlines</span>, <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Yellow for Awaiting Feedback</span>. The notification bar will alert you to critical deadlines!</p>
+                </div>
+                <div class="bg-blue-50 p-5 rounded-lg shadow-sm border border-blue-200">
+                    <h3 class="text-lg font-semibold text-blue-700 mb-2">🔄 Stay Updated with the Updates Log!</h3>
+                    <p class="text-gray-700">The <span class="font-medium text-purple-600">Updates Log</span> is your go-to for tracking all system or process changes. This helps you stay current and understand the impact of new developments on your work. Don't forget to export your data regularly as a backup!</p>
+                </div>
+                <div class="bg-red-50 p-5 rounded-lg shadow-sm border border-red-200">
+                    <h3 class="text-lg font-semibold text-red-700 mb-2">🚨 Special Attention Processes!</h3>
+                    <p class="text-gray-700">Processes marked with <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-red-200 text-red-800">Special Attention Needed</span> in the Process Library are highlighted. Make sure to review these regularly and address any associated deadlines and responsible persons. These are critical for bending the cost curve in healthcare!</p>
+                </div>
+                <div class="bg-teal-50 p-5 rounded-lg shadow-sm border border-teal-200">
+                    <h3 class="text-lg font-semibold text-teal-700 mb-2">🔍 Use Search & Sort Effectively!</h3>
+                    <p class="text-gray-700">Each table now has a search bar to quickly filter results. Click on table headers to sort data by that column. This helps you drill down into specific information and identify trends faster.</p>
+                </div>
+                <div class="bg-indigo-50 p-5 rounded-lg shadow-sm border border-indigo-200">
+                    <h3 class="text-lg font-semibold text-indigo-700 mb-2">📈 Leverage the Dashboard Overview!</h3>
+                    <p class="text-gray-700">The <span class="font-medium text-blue-600">Dashboard Overview</span> provides key performance indicators (KPIs) at a glance. Check this section regularly to monitor overall progress, identify areas needing immediate attention, and review recent activities across all operational teams. This is key to driving service excellence and optimizing opportunities!</p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-gray-800 text-white p-4 mt-6">
+        <div class="container mx-auto text-center text-sm">
+            &copy; 2025 Process & Data Insights Dashboard. All rights reserved. Claritev.
+        </div>
+    </footer>
+
+    <!-- Modals (retained from previous version, hidden by default) -->
+    <div id="customAlertModal" class="modal">
+        <div class="modal-content max-w-sm">
+            <h3 class="text-xl font-semibold mb-4" id="customAlertTitle"></h3>
+            <p class="mb-6" id="customAlertMessage"></p>
+            <div class="flex justify-end space-x-3" id="customAlertButtons">
+                <!-- Buttons will be injected here -->
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // Unique key for localStorage to store all dashboard data
+        const LOCAL_STORAGE_KEY = 'processDataInsightsDashboard';
+
+        // Initial data structure for the dashboard
+        let dashboardData = {
+            processes: [],
+            dataNotes: [],
+            projects: [],
+            updates: []
+        };
+
+        // --- Tab Management ---
+        /**
+         * Opens a specific tab and optionally triggers an edit action for an item.
+         * @param {string} tabId - The ID of the tab to open.
+         * @param {Event} [event] - The click event (optional, for tab button styling).
+         * @param {string} [itemId] - The ID of the item to edit (optional).
+         * @param {string} [itemType] - The type of the item ('process', 'dataNote', 'project', 'update') (optional).
+         */
+        function openTab(tabId, event, itemId = null, itemType = null) {
+            // Get all tab content elements
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Get all tab buttons
+            const tabButtons = document.querySelectorAll('.tab-button');
+            tabButtons.forEach(button => {
+                button.classList.remove('active');
+                // Remove all specific color active classes and reset 3D effect
+                button.classList.remove('process-tab', 'data-tab', 'project-tab', 'updates-tab', 'dashboard-tab', 'help-tab');
+                button.style.top = '0'; // Reset pressed state
+                button.style.boxShadow = '0 4px 0 rgba(0,0,0,0.2)'; // Restore 3D shadow
+            });
+
+            // Show the selected tab content
+            document.getElementById(tabId).classList.add('active');
+
+            // Find the specific tab button and activate it
+            let targetButton = null;
+            if (event && event.currentTarget) {
+                targetButton = event.currentTarget;
+            } else {
+                targetButton = document.querySelector(`.tab-button[onclick*="openTab('${tabId}')"]`);
+            }
+
+            if (targetButton) {
+                targetButton.classList.add('active');
+                // Add the specific color class based on tabId
+                switch (tabId) {
+                    case 'processLibrary': targetButton.classList.add('process-tab'); break;
+                    case 'dataAnalysis': targetButton.classList.add('data-tab'); break;
+                    case 'projectTracker': targetButton.classList.add('project-tab'); break;
+                    case 'updatesLog': targetButton.classList.add('updates-tab'); break;
+                    case 'dashboardOverview': targetButton.classList.add('dashboard-tab'); break;
+                    case 'helpTips': targetButton.classList.add('help-tab'); break;
+                }
+                // Remove 3D shadow and press effect for the active tab
+                targetButton.style.boxShadow = 'none';
+                targetButton.style.top = '0';
+            }
+
+            // Re-render lists for the active tab to ensure data is fresh (especially for KPIs)
+            renderAllLists();
+
+            // If an item ID and type are provided, trigger the edit function after tab switch
+            if (itemId && itemType) {
+                setTimeout(() => { // Small delay to ensure tab is fully rendered
+                    switch (itemType) {
+                        case 'process':
+                            editProcess(itemId);
+                            break;
+                        case 'dataNote':
+                            editDataNote(itemId);
+                            break;
+                        case 'project':
+                            editProject(itemId);
+                            break;
+                        case 'update':
+                            editUpdate(itemId);
+                            break;
+                    }
+                }, 100);
+            }
+        }
+
+        // --- Utility Functions for Local Storage ---
+
+        /**
+         * Loads data from localStorage.
+         * @returns {Object} The parsed dashboard data or an empty structure if not found.
+         */
+        function loadData() {
+            try {
+                const storedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+                if (storedData) {
+                    const parsedData = JSON.parse(storedData);
+                    // Ensure updateDates is an array for older data
+                    parsedData.processes.forEach(p => {
+                        if (!p.updateDates) p.updateDates = [];
+                        // Ensure lastUpdated exists for older items for recent activity sorting
+                        if (!p.lastUpdated) p.lastUpdated = p.processStartDate ? p.processStartDate + 'T00:00:00.000Z' : new Date().toISOString();
+                    });
+                    parsedData.dataNotes.forEach(n => {
+                        if (!n.lastUpdated) n.lastUpdated = n.date ? n.date + 'T00:00:00.000Z' : new Date().toISOString();
+                    });
+                    parsedData.projects.forEach(proj => {
+                        if (!proj.lastUpdated) proj.lastUpdated = proj.dueDate ? proj.dueDate + 'T00:00:00.000Z' : new Date().toISOString();
+                    });
+                    parsedData.updates.forEach(u => {
+                        if (!u.lastUpdated) u.lastUpdated = u.date ? u.date + 'T00:00:00.000Z' : new Date().toISOString();
+                    });
+                    return parsedData;
+                }
+            } catch (e) {
+                console.error("Error loading data from localStorage:", e);
+                // Fallback to empty data if parsing fails
+            }
+            return {
+                processes: [],
+                dataNotes: [],
+                projects: [],
+                updates: []
+            };
+        }
+
+        /**
+         * Saves the current dashboardData to localStorage.
+         */
+        function saveData() {
+            try {
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dashboardData));
+            } catch (e) {
+                console.error("Error saving data to localStorage:", e);
+            }
+        }
+
+        /**
+         * Clears all data from localStorage and resets the dashboard.
+         */
+        function clearAllData() {
+            showConfirmationModal("Are you sure you want to clear ALL dashboard data? This action cannot be undone.", () => {
+                localStorage.removeItem(LOCAL_STORAGE_KEY);
+                dashboardData = {
+                    processes: [],
+                    dataNotes: [],
+                    projects: [],
+                    updates: []
+                };
+                renderAllLists(); // Re-render empty lists
+                showInfoModal("All data cleared successfully!");
+            });
+        }
+
+        // --- Sample Data Generation ---
+
+        /**
+         * Generates a random UUID.
+         * @returns {string} A unique ID.
+         */
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        /**
+         * Generates a random date within the last 3 months.
+         * @returns {string} Date in ISO format (YYYY-MM-DD).
+         */
+        function getRandomDateLast3Months() {
+            const today = new Date();
+            const daysAgo = Math.floor(Math.random() * 90); // Up to 90 days ago (approx 3 months)
+            const randomDate = new Date(today);
+            randomDate.setDate(today.getDate() - daysAgo);
+            return randomDate.toISOString().split('T')[0];
+        }
+
+        /**
+         * Generates a random date in the future (next 7-30 days).
+         * @returns {string} Date in ISO format (YYYY-MM-DD).
+         */
+        function getRandomFutureDate() {
+            const today = new Date();
+            const daysAhead = Math.floor(Math.random() * 24) + 7; // 7 to 30 days ahead
+            const futureDate = new Date(today);
+            futureDate.setDate(today.getDate() + daysAhead);
+            return futureDate.toISOString().split('T')[0];
+        }
+
+        /**
+         * Loads 3 months of realistic sample data into the dashboard.
+         */
+        function loadSampleData() {
+            showConfirmationModal("This will overwrite existing data. Are you sure you want to load sample data?", () => {
+                dashboardData = {
+                    processes: [],
+                    dataNotes: [],
+                    projects: [],
+                    updates: []
+                }; // Clear current data before loading samples
+
+                const currentTimestamp = new Date().toISOString();
+
+                // Sample Processes (Healthcare focused)
+                const sampleProcesses = [
+                    { id: generateUUID(), name: "Claims Processing Optimization", description: "Streamlining the claims adjudication process to reduce turnaround time and errors.", rules: "Automated verification for low-risk claims; manual review for high-value/complex cases. Adherence to ICD-10 and CPT coding standards.", docLink: "https://claritev.com/docs/claims-opt", processStartDate: "2024-03-01", updateDates: ["2024-04-10", "2024-05-20"], durationOfProcess: 5, specialAttentionNeeded: "No", responsiblePerson: "", deadlineToResolve: "", lastUpdated: currentTimestamp },
+                    { id: generateUUID(), name: "Patient Data Integration (EHR)", description: "Integrating patient data from various sources into a unified Electronic Health Record (EHR) system.", rules: "HIPAA compliance for all data transfers. Data mapping standards must be strictly followed. Consent management protocols.", docLink: "https://claritev.com/docs/ehr-integration", processStartDate: "2024-02-15", updateDates: ["2024-03-05", "2024-04-25"], durationOfProcess: 10, specialAttentionNeeded: "Yes", responsiblePerson: "Dr. Emily Chen", deadlineToResolve: getRandomFutureDate(), lastUpdated: currentTimestamp },
+                    { id: generateUUID(), name: "Regulatory Compliance Audit Prep", description: "Preparing for annual regulatory and compliance audits (e.g., HIPAA, HITECH, state-specific mandates).", rules: "All documentation must be up-to-date and accessible. Training records for all staff on compliance policies.", docLink: "https://claritev.com/docs/audit-prep", processStartDate: "2024-04-01", updateDates: ["2024-05-15"], durationOfProcess: 7, specialAttentionNeeded: "No", responsiblePerson: "", deadlineToResolve: "", lastUpdated: currentTimestamp },
+                    { id: generateUUID(), name: "Telehealth Platform Performance Monitoring", description: "Monitoring the performance and user experience of our telehealth platform.", rules: "Service level agreements (SLAs) for uptime and response times. Patient feedback collection and analysis protocols.", docLink: "https://claritev.com/docs/telehealth-perf", processStartDate: "2024-01-10", updateDates: ["2024-02-01", "2024-03-10", "2024-04-01", "2024-05-01"], durationOfProcess: 2, specialAttentionNeeded: "Yes", responsiblePerson: "Michael Lee", deadlineToResolve: getRandomFutureDate(), lastUpdated: currentTimestamp },
+                    { id: generateUUID(), name: "Pharmacy Benefits Management (PBM) Reconciliation", description: "Reconciling pharmacy claims data with PBM records to ensure accurate billing and cost management.", rules: "Weekly data sync with PBM. Discrepancies over 0.5% require immediate investigation.", docLink: "https://claritev.com/docs/pbm-reconc", processStartDate: "2024-03-20", updateDates: ["2024-04-30"], durationOfProcess: 3, specialAttentionNeeded: "No", responsiblePerson: "", deadlineToResolve: "", lastUpdated: currentTimestamp }
+                ];
+                dashboardData.processes.push(...sampleProcesses);
+
+                // Sample Data Analysis Notes (Healthcare focused)
+                const sampleDataNotes = [
+                    { id: generateUUID(), date: getRandomDateLast3Months(), dataSource: "Q1 Claims Denial Report", findings: "Identified a 20% increase in denials for 'pre-authorization required' claims related to new specialty drugs.", rootCause: "Outdated pre-auth list in claims system, lack of communication with providers.", associatedProcess: sampleProcesses[0].name, actionItems: "Update pre-auth list, conduct provider outreach program.", lastUpdated: currentTimestamp },
+                    { id: generateUUID(), date: getRandomDateLast3Months(), dataSource: "Patient Readmission Trends", findings: "Noticed higher readmission rates (within 30 days) for patients discharged with congestive heart failure (CHF) from specific facilities.", rootCause: "Inadequate post-discharge follow-up protocols at those facilities.", associatedProcess: sampleProcesses[1].name, actionItems: "Collaborate with facilities to improve discharge planning and follow-up.", lastUpdated: currentTimestamp },
+                    { id: generateUUID(), date: getRandomDateLast3Months(), dataSource: "Compliance Incident Log", findings: "Spike in minor HIPAA violations related to unencrypted email communication from a new department.", rootCause: "Insufficient training on secure communication for new hires in that department.", associatedProcess: sampleProcesses[2].name, actionItems: "Mandatory retraining for affected department, update onboarding module.", lastUpdated: currentTimestamp },
+                    { id: generateUUID(), date: getRandomDateLast3Months(), dataSource: "Telehealth User Feedback", findings: "Consistent negative feedback regarding video quality and connection drops during evening hours.", rootCause: "Server overload during peak times, insufficient bandwidth allocation.", associatedProcess: sampleProcesses[3].name, actionItems: "Escalate to IT for server capacity review, explore CDN solutions.", lastUpdated: currentTimestamp },
+                    { id: generateUUID(), date: getRandomDateLast3Months(), dataSource: "PBM Discrepancy Report", findings: "Recurring discrepancies in high-cost drug claims from a particular PBM partner.", rootCause: "Mismatch in drug formulary versions between Claritev and PBM.", associatedProcess: sampleProcesses[4].name, actionItems: "Schedule meeting with PBM partner to synchronize formularies.", lastUpdated: currentTimestamp },
+                    { id: generateUUID(), date: getRandomDateLast3Months(), dataSource: "Member Engagement Survey", findings: "Low engagement scores for preventative care programs among younger demographics.", rootCause: "Lack of mobile-friendly resources and personalized recommendations.", associatedProcess: sampleProcesses[0].name, actionItems: "Develop new mobile app features, implement AI-driven personalized health tips.", lastUpdated: currentTimestamp }
+                ];
+                dashboardData.dataNotes.push(...sampleDataNotes);
+
+                // Sample Projects/Tasks (Healthcare focused)
+                const sampleProjects = [
+                    { id: generateUUID(), projectName: "AI-driven Claims Prediction Pilot", taskDescription: "Develop and test a machine learning model to predict high-risk claims.", dueDate: getRandomFutureDate(), status: "In Progress", stakeholders: "Data Science, Claims Ops, IT", lastUpdated: currentTimestamp },
+                    { id: generateUUID(), projectName: "EHR System Upgrade Phase 2", taskDescription: "Migrate legacy patient records to the new EHR system.", dueDate: getRandomFutureDate(), status: "To Do", stakeholders: "IT, Clinical Ops, Data Governance", lastUpdated: currentTimestamp },
+                    { id: generateUUID(), projectName: "HIPAA Compliance Dashboard Development", taskDescription: "Design and implement a real-time dashboard for monitoring compliance metrics.", dueDate: getRandomFutureDate(), status: "In Progress", stakeholders: "Compliance, IT, Legal", lastUpdated: currentTimestamp },
+                    { id: generateUUID(), projectName: "Predictive Analytics for Patient Outcomes", taskDescription: "Research and prototype models for predicting patient readmission risks.", dueDate: getRandomFutureDate(), status: "Awaiting Feedback", stakeholders: "Clinical Research, Data Science", lastUpdated: currentTimestamp },
+                    { id: generateUUID(), projectName: "Provider Credentialing Automation", taskDescription: "Automate parts of the provider credentialing process using RPA.", dueDate: getRandomFutureDate(), status: "To Do", stakeholders: "Provider Relations, IT Automation", lastUpdated: currentTimestamp },
+                    { id: generateUUID(), projectName: "Cost-Benefit Analysis: New Drug Formulary", taskDescription: "Evaluate the financial impact of adding new drugs to the approved formulary.", dueDate: getRandomDateLast3Months(), status: "Done", stakeholders: "Pharmacy, Finance, Medical Review", lastUpdated: currentTimestamp }
+                ];
+                dashboardData.projects.push(...sampleProjects);
+
+                // Sample Updates (Healthcare focused)
+                const sampleUpdates = [
+                    { id: generateUUID(), date: getRandomDateLast3Months(), description: "Regulatory update: New CMS guidelines for telehealth billing effective July 1.", impact: "Requires immediate update to billing processes and provider training.", docLink: "https://claritev.com/updates/cms-telehealth", lastUpdated: currentTimestamp },
+                    { id: generateUUID(), date: getRandomDateLast3Months(), description: "System rollout: New AI-powered fraud detection module deployed in claims system.", impact: "Potential reduction in fraudulent claims, requires monitoring and fine-tuning.", docLink: "https://claritev.com/updates/fraud-detection", lastUpdated: currentTimestamp },
+                    { id: generateUUID(), date: getRandomDateLast3Months(), description: "Policy change: Revised patient consent forms for data sharing.", impact: "Affects patient intake and data management processes. Training required for front-line staff.", docLink: "https://claritev.com/updates/consent-forms", lastUpdated: currentTimestamp },
+                    { id: generateUUID(), date: getRandomDateLast3Months(), description: "External data source integration: New CDC public health data feed added for population health analysis.", impact: "Enables more granular demographic analysis for health initiatives.", docLink: "https://claritev.com/updates/cdc-data", lastUpdated: currentTimestamp }
+                ];
+                dashboardData.updates.push(...sampleUpdates);
+
+                saveData();
+                renderAllLists();
+                showInfoModal("Sample data loaded successfully!");
+            });
+        }
+
+        // --- Render Functions ---
+
+        let currentSort = { column: '', direction: 'asc' };
+
+        /**
+         * Generic sort function for tables.
+         * @param {Array<Object>} dataArray - The array to sort.
+         * @param {string} column - The column (property name) to sort by.
+         * @param {string} type - 'string', 'date', or 'number'.
+         * @returns {Array<Object>} The sorted array.
+         */
+        function sortTable(dataArray, column, type) {
+            const direction = (currentSort.column === column && currentSort.direction === 'asc') ? 'desc' : 'asc';
+            currentSort = { column, direction };
+
+            dataArray.sort((a, b) => {
+                let valA = a[column];
+                let valB = b[column];
+
+                if (type === 'date') {
+                    valA = new Date(valA || '1970-01-01'); // Default to epoch for empty dates
+                    valB = new Date(valB || '1970-01-01');
+                } else if (type === 'number') {
+                    valA = parseFloat(valA) || 0;
+                    valB = parseFloat(valB) || 0;
+                } else { // string
+                    valA = String(valA || '').toLowerCase();
+                    valB = String(valB || '').toLowerCase();
+                }
+
+                if (valA < valB) return direction === 'asc' ? -1 : 1;
+                if (valA > valB) return direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+            return dataArray;
+        }
+
+        /**
+         * Renders the list of processes as a sortable table.
+         */
+        function renderProcesses() {
+            const listElement = document.getElementById('processList');
+            listElement.innerHTML = ''; // Clear existing list
+
+            const processesToRender = [...dashboardData.processes]; // Create a copy for sorting
+
+            const table = document.createElement('table');
+            table.className = 'data-table';
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th onclick="renderProcesses(sortTable(processesToRender, 'name', 'string'))">Name</th>
+                        <th onclick="renderProcesses(sortTable(processesToRender, 'processStartDate', 'date'))">Start Date</th>
+                        <th onclick="renderProcesses(sortTable(processesToRender, 'durationOfProcess', 'number'))">Duration (Days)</th>
+                        <th onclick="renderProcesses(sortTable(processesToRender, 'specialAttentionNeeded', 'string'))">Attention Needed</th>
+                        <th onclick="renderProcesses(sortTable(processesToRender, 'responsiblePerson', 'string'))">Responsible</th>
+                        <th onclick="renderProcesses(sortTable(processesToRender, 'deadlineToResolve', 'date'))">Deadline</th>
+                        <th onclick="renderProcesses(sortTable(processesToRender, 'lastUpdated', 'date'))">Last Updated</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            `;
+            const tbody = table.querySelector('tbody');
+
+            processesToRender.forEach(process => {
+                const row = tbody.insertRow();
+                // Add onclick to the row itself for editing
+                row.onclick = (event) => {
+                    // Prevent row click if an action button within the row is clicked
+                    if (event.target.tagName === 'BUTTON') {
+                        event.stopPropagation();
+                        return;
+                    }
+                    openTab('processLibrary', null, process.id, 'process');
+                };
+
+                let rowClasses = '';
+
+                // Conditional Formatting for Processes
+                if (process.specialAttentionNeeded === 'Yes') {
+                    rowClasses += ' special-attention';
+                    const today = new Date();
+                    const deadlineDate = new Date(process.deadlineToResolve);
+                    const diffTime = deadlineDate.getTime() - today.getTime();
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                    if (diffDays <= 7 && diffDays >= 0) {
+                        rowClasses += ' deadline-warning'; // Deadline approaching
+                    } else if (diffDays < 0) {
+                        rowClasses += ' deadline-urgent'; // Deadline passed
+                    }
+                }
+                row.className = rowClasses.trim();
+
+                row.innerHTML = `
+                    <td class="font-medium text-blue-700">${process.name}</td>
+                    <td>${process.processStartDate || 'N/A'}</td>
+                    <td>${process.durationOfProcess || 'N/A'}</td>
+                    <td>${process.specialAttentionNeeded || 'No'}</td>
+                    <td>${process.responsiblePerson || 'N/A'}</td>
+                    <td>${process.deadlineToResolve || 'N/A'}</td>
+                    <td>${process.lastUpdated ? new Date(process.lastUpdated).toLocaleDateString() : 'N/A'}</td>
+                    <td>
+                        <div class="flex space-x-1">
+                            <button onclick="editProcess('${process.id}')" class="bg-yellow-500 hover:bg-yellow-600 text-white text-xs py-1 px-2 rounded-md transition duration-300">Edit</button>
+                            <button onclick="deleteProcess('${process.id}')" class="bg-red-500 hover:bg-red-600 text-white text-xs py-1 px-2 rounded-md transition duration-300">Delete</button>
+                        </div>
+                    </td>
+                `;
+            });
+            listElement.appendChild(table);
+        }
+
+        /**
+         * Renders the list of data analysis notes as a sortable table.
+         */
+        function renderDataNotes() {
+            const listElement = document.getElementById('dataNoteList');
+            listElement.innerHTML = '';
+
+            const dataNotesToRender = [...dashboardData.dataNotes];
+
+            const table = document.createElement('table');
+            table.className = 'data-table';
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th onclick="renderDataNotes(sortTable(dataNotesToRender, 'date', 'date'))">Date</th>
+                        <th onclick="renderDataNotes(sortTable(dataNotesToRender, 'dataSource', 'string'))">Data Source</th>
+                        <th onclick="renderDataNotes(sortTable(dataNotesToRender, 'findings', 'string'))">Key Findings</th>
+                        <th onclick="renderDataNotes(sortTable(dataNotesToRender, 'associatedProcess', 'string'))">Associated Process</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            `;
+            const tbody = table.querySelector('tbody');
+
+            dataNotesToRender.forEach(note => {
+                const row = tbody.insertRow();
+                // Add onclick to the row itself for editing
+                row.onclick = (event) => {
+                    if (event.target.tagName === 'BUTTON') {
+                        event.stopPropagation();
+                        return;
+                    }
+                    openTab('dataAnalysis', null, note.id, 'dataNote');
+                };
+                row.innerHTML = `
+                    <td>${note.date}</td>
+                    <td class="font-medium text-blue-700">${note.dataSource}</td>
+                    <td class="wrap-text">${note.findings}</td>
+                    <td>${note.associatedProcess || 'N/A'}</td>
+                    <td>
+                        <div class="flex space-x-1">
+                            <button onclick="editDataNote('${note.id}')" class="bg-yellow-500 hover:bg-yellow-600 text-white text-xs py-1 px-2 rounded-md transition duration-300">Edit</button>
+                            <button onclick="deleteDataNote('${note.id}')" class="bg-red-500 hover:bg-red-600 text-white text-xs py-1 px-2 rounded-md transition duration-300">Delete</button>
+                        </div>
+                    </td>
+                `;
+            });
+            listElement.appendChild(table);
+        }
+
+        /**
+         * Renders the list of projects/tasks as a sortable table.
+         */
+        function renderProjects() {
+            const listElement = document.getElementById('projectTaskList');
+            listElement.innerHTML = '';
+
+            const projectsToRender = [...dashboardData.projects];
+
+            const table = document.createElement('table');
+            table.className = 'data-table';
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th onclick="renderProjects(sortTable(projectsToRender, 'projectName', 'string'))">Project Name</th>
+                        <th onclick="renderProjects(sortTable(projectsToRender, 'taskDescription', 'string'))">Task</th>
+                        <th onclick="renderProjects(sortTable(projectsToRender, 'dueDate', 'date'))">Due Date</th>
+                        <th onclick="renderProjects(sortTable(projectsToRender, 'status', 'string'))">Status</th>
+                        <th onclick="renderProjects(sortTable(projectsToRender, 'stakeholders', 'string'))">Stakeholders</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            `;
+            const tbody = table.querySelector('tbody');
+
+            projectsToRender.forEach(project => {
+                const row = tbody.insertRow();
+                // Add onclick to the row itself for editing
+                row.onclick = (event) => {
+                    if (event.target.tagName === 'BUTTON') {
+                        event.stopPropagation();
+                        return;
+                    }
+                    openTab('projectTracker', null, project.id, 'project');
+                };
+
+                let rowClasses = '';
+                const today = new Date();
+                const dueDate = new Date(project.dueDate);
+                const diffTime = dueDate.getTime() - today.getTime();
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                // Conditional Formatting for Projects
+                if (project.status === 'To Do') {
+                    rowClasses += ' status-to-do';
+                } else if (project.status === 'In Progress') {
+                    rowClasses += ' status-in-progress';
+                } else if (project.status === 'Awaiting Feedback') {
+                    rowClasses += ' status-awaiting-feedback';
+                } else if (project.status === 'Done') {
+                    rowClasses += ' status-done';
+                }
+
+                if (project.status !== 'Done') {
+                    if (diffDays <= 3 && diffDays >= 0) {
+                        rowClasses += ' deadline-warning'; // Deadline approaching (3 days or less)
+                    } else if (diffDays < 0) {
+                        rowClasses += ' deadline-urgent'; // Deadline passed
+                    }
+                }
+                row.className = rowClasses.trim();
+
+                const statusBadgeClass = {
+                    "To Do": "bg-gray-200 text-gray-800",
+                    "In Progress": "bg-blue-100 text-blue-800",
+                    "Awaiting Feedback": "bg-yellow-100 text-yellow-800",
+                    "Done": "bg-green-100 text-green-800"
+                }[project.status] || "bg-gray-200 text-gray-800";
+
+
+                row.innerHTML = `
+                    <td class="font-medium text-blue-700">${project.projectName}</td>
+                    <td class="wrap-text">${project.taskDescription}</td>
+                    <td>${project.dueDate || 'N/A'}</td>
+                    <td><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusBadgeClass}">${project.status}</span></td>
+                    <td>${project.stakeholders || 'N/A'}</td>
+                    <td>
+                        <div class="flex space-x-1">
+                            <button onclick="editProject('${project.id}')" class="bg-yellow-500 hover:bg-yellow-600 text-white text-xs py-1 px-2 rounded-md transition duration-300">Edit</button>
+                            <button onclick="deleteProject('${project.id}')" class="bg-red-500 hover:bg-red-600 text-white text-xs py-1 px-2 rounded-md transition duration-300">Delete</button>
+                        </div>
+                    </td>
+                `;
+            });
+            listElement.appendChild(table);
+        }
+
+        /**
+         * Renders the list of updates as a sortable table.
+         */
+        function renderUpdates() {
+            const listElement = document.getElementById('updateList');
+            listElement.innerHTML = '';
+
+            const updatesToRender = [...dashboardData.updates];
+
+            const table = document.createElement('table');
+            table.className = 'data-table';
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th onclick="renderUpdates(sortTable(updatesToRender, 'date', 'date'))">Date</th>
+                        <th onclick="renderUpdates(sortTable(updatesToRender, 'description', 'string'))">Description</th>
+                        <th onclick="renderUpdates(sortTable(updatesToRender, 'impact', 'string'))">Impact</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            `;
+            const tbody = table.querySelector('tbody');
+
+            updatesToRender.forEach(update => {
+                const row = tbody.insertRow();
+                // Add onclick to the row itself for editing
+                row.onclick = (event) => {
+                    if (event.target.tagName === 'BUTTON') {
+                        event.stopPropagation();
+                        return;
+                    }
+                    openTab('updatesLog', null, update.id, 'update');
+                };
+                row.innerHTML = `
+                    <td>${update.date}</td>
+                    <td class="wrap-text font-medium text-blue-700">${update.description}</td>
+                    <td class="wrap-text">${update.impact || 'N/A'}</td>
+                    <td>
+                        <div class="flex space-x-1">
+                            <button onclick="editUpdate('${update.id}')" class="bg-yellow-500 hover:bg-yellow-600 text-white text-xs py-1 px-2 rounded-md transition duration-300">Edit</button>
+                            <button onclick="deleteUpdate('${update.id}')" class="bg-red-500 hover:bg-red-600 text-white text-xs py-1 px-2 rounded-md transition duration-300">Delete</button>
+                        </div>
+                    </td>
+                `;
+            });
+            listElement.appendChild(table);
+        }
+
+
+        /**
+         * Renders all lists on the dashboard.
+         */
+        function renderAllLists() {
+            renderProcesses();
+            renderDataNotes();
+            renderProjects();
+            renderUpdates();
+            updateKPIs(); // Update KPIs whenever data is rendered
+            renderRecentActivity(); // Render recent activities
+            checkDeadlinesAndAttention(); // Check and display notifications
+        }
+
+        // --- CRUD Operations for Processes ---
+
+        document.getElementById('processForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const id = document.getElementById('processId').value;
+            const name = document.getElementById('processName').value;
+            const description = document.getElementById('processDescription').value;
+            const rules = document.getElementById('processRules').value;
+            const docLink = document.getElementById('processDocLink').value;
+            const processStartDate = document.getElementById('processStartDate').value;
+            const durationOfProcess = document.getElementById('processDuration').value;
+            const specialAttentionNeeded = document.getElementById('specialAttentionNeeded').value;
+            const responsiblePerson = document.getElementById('responsiblePerson').value;
+            const deadlineToResolve = document.getElementById('deadlineToResolve').value;
+            const currentTimestamp = new Date().toISOString();
+
+            if (id) {
+                // Update existing process
+                const index = dashboardData.processes.findIndex(p => p.id === id);
+                if (index !== -1) {
+                    const existingProcess = dashboardData.processes[index];
+                    // Add current date to updateDates if description or rules changed
+                    if (existingProcess.description !== description || existingProcess.rules !== rules) {
+                        existingProcess.updateDates.push(currentTimestamp.split('T')[0]); // Only date part
+                    }
+                    dashboardData.processes[index] = {
+                        ...existingProcess, // Keep existing properties
+                        name, description, rules, docLink, processStartDate, durationOfProcess: parseInt(durationOfProcess) || null,
+                        specialAttentionNeeded, responsiblePerson, deadlineToResolve,
+                        lastUpdated: currentTimestamp // Update lastUpdated with full timestamp
+                    };
+                    showInfoModal("Process updated successfully!");
+                }
+            } else {
+                // Add new process
+                dashboardData.processes.push({
+                    id: generateUUID(), name, description, rules, docLink, processStartDate,
+                    updateDates: [currentTimestamp.split('T')[0]], // Initial update date
+                    durationOfProcess: parseInt(durationOfProcess) || null,
+                    specialAttentionNeeded, responsiblePerson, deadlineToResolve,
+                    lastUpdated: currentTimestamp
+                });
+                showInfoModal("Process added successfully!");
+            }
+            saveData();
+            renderProcesses();
+            this.reset(); // Clear form
+            document.getElementById('processId').value = ''; // Clear hidden ID
+        });
+
+        function editProcess(id) {
+            const process = dashboardData.processes.find(p => p.id === id);
+            if (process) {
+                document.getElementById('processId').value = process.id;
+                document.getElementById('processName').value = process.name;
+                document.getElementById('processDescription').value = process.description;
+                document.getElementById('processRules').value = process.rules;
+                document.getElementById('processDocLink').value = process.docLink;
+                document.getElementById('processStartDate').value = process.processStartDate || '';
+                document.getElementById('processDuration').value = process.durationOfProcess || '';
+                document.getElementById('specialAttentionNeeded').value = process.specialAttentionNeeded || 'No';
+                document.getElementById('responsiblePerson').value = process.responsiblePerson || '';
+                document.getElementById('deadlineToResolve').value = process.deadlineToResolve || '';
+            }
+        }
+
+        function deleteProcess(id) {
+            showConfirmationModal("Are you sure you want to delete this process?", () => {
+                dashboardData.processes = dashboardData.processes.filter(p => p.id !== id);
+                saveData();
+                renderProcesses();
+                showInfoModal("Process deleted successfully!");
+            });
+        }
+
+        // --- CRUD Operations for Data Notes ---
+
+        document.getElementById('dataNoteForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const id = document.getElementById('dataNoteId').value;
+            const date = document.getElementById('dataNoteDate').value;
+            const dataSource = document.getElementById('dataSource').value;
+            const findings = document.getElementById('keyFindings').value;
+            const rootCause = document.getElementById('potentialRootCause').value;
+            const associatedProcess = document.getElementById('associatedProcess').value;
+            const actionItems = document.getElementById('dataActionItems').value;
+            const currentTimestamp = new Date().toISOString();
+
+
+            if (id) {
+                // Update existing data note
+                const index = dashboardData.dataNotes.findIndex(n => n.id === id);
+                if (index !== -1) {
+                    dashboardData.dataNotes[index] = { id, date, dataSource, findings, rootCause, associatedProcess, actionItems, lastUpdated: currentTimestamp };
+                    showInfoModal("Data note updated successfully!");
+                }
+            } else {
+                // Add new data note
+                dashboardData.dataNotes.push({ id: generateUUID(), date, dataSource, findings, rootCause, associatedProcess, actionItems, lastUpdated: currentTimestamp });
+                showInfoModal("Data note added successfully!");
+            }
+            saveData();
+            renderDataNotes();
+            this.reset();
+            document.getElementById('dataNoteId').value = '';
+        });
+
+        function editDataNote(id) {
+            const note = dashboardData.dataNotes.find(n => n.id === id);
+            if (note) {
+                document.getElementById('dataNoteId').value = note.id;
+                document.getElementById('dataNoteDate').value = note.date;
+                document.getElementById('dataSource').value = note.dataSource;
+                document.getElementById('keyFindings').value = note.findings;
+                document.getElementById('potentialRootCause').value = note.rootCause;
+                document.getElementById('associatedProcess').value = note.associatedProcess;
+                document.getElementById('dataActionItems').value = note.actionItems;
+            }
+        }
+
+        function deleteDataNote(id) {
+            showConfirmationModal("Are you sure you want to delete this data note?", () => {
+                dashboardData.dataNotes = dashboardData.dataNotes.filter(n => n.id !== id);
+                saveData();
+                renderDataNotes();
+                showInfoModal("Data note deleted successfully!");
+            });
+        }
+
+        // --- CRUD Operations for Projects/Tasks ---
+
+        document.getElementById('projectTaskForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const id = document.getElementById('projectId').value;
+            const projectName = document.getElementById('projectName').value;
+            const taskDescription = document.getElementById('taskDescription').value;
+            const dueDate = document.getElementById('taskDueDate').value;
+            const status = document.getElementById('taskStatus').value;
+            const stakeholders = document.getElementById('taskStakeholders').value;
+            const currentTimestamp = new Date().toISOString();
+
+            if (id) {
+                // Update existing project/task
+                const index = dashboardData.projects.findIndex(p => p.id === id);
+                if (index !== -1) {
+                    dashboardData.projects[index] = { id, projectName, taskDescription, dueDate, status, stakeholders, lastUpdated: currentTimestamp };
+                    showInfoModal("Project/Task updated successfully!");
+                }
+            } else {
+                // Add new project/task
+                dashboardData.projects.push({ id: generateUUID(), projectName, taskDescription, dueDate, status, stakeholders, lastUpdated: currentTimestamp });
+                showInfoModal("Project/Task added successfully!");
+            }
+            saveData();
+            renderProjects();
+            this.reset();
+            document.getElementById('projectId').value = '';
+        });
+
+        function editProject(id) {
+            const project = dashboardData.projects.find(p => p.id === id);
+            if (project) {
+                document.getElementById('projectId').value = project.id;
+                document.getElementById('projectName').value = project.projectName;
+                document.getElementById('taskDescription').value = project.taskDescription;
+                document.getElementById('taskDueDate').value = project.dueDate;
+                document.getElementById('taskStatus').value = project.status;
+                document.getElementById('taskStakeholders').value = project.stakeholders;
+            }
+        }
+
+        function deleteProject(id) {
+            showConfirmationModal("Are you sure you want to delete this project/task?", () => {
+                dashboardData.projects = dashboardData.projects.filter(p => p.id !== id);
+                saveData();
+                renderProjects();
+                showInfoModal("Project/Task deleted successfully!");
+            });
+        }
+
+        // --- CRUD Operations for Updates ---
+
+        document.getElementById('updateForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const id = document.getElementById('updateId').value;
+            const date = document.getElementById('updateDate').value;
+            const description = document.getElementById('updateDescription').value;
+            const impact = document.getElementById('updateImpact').value;
+            const docLink = document.getElementById('updateDocLink').value;
+            const currentTimestamp = new Date().toISOString();
+
+            if (id) {
+                // Update existing update
+                const index = dashboardData.updates.findIndex(u => u.id === id);
+                if (index !== -1) {
+                    dashboardData.updates[index] = { id, date, description, impact, docLink, lastUpdated: currentTimestamp };
+                    showInfoModal("Update updated successfully!");
+                }
+            } else {
+                // Add new update
+                dashboardData.updates.push({ id: generateUUID(), date, description, impact, docLink, lastUpdated: currentTimestamp });
+                showInfoModal("Update added successfully!");
+            }
+            saveData();
+            renderUpdates();
+            this.reset();
+            document.getElementById('updateId').value = '';
+        });
+
+        function editUpdate(id) {
+            const update = dashboardData.updates.find(u => u.id === id);
+            if (update) {
+                document.getElementById('updateId').value = update.id;
+                document.getElementById('updateDate').value = update.date;
+                document.getElementById('updateDescription').value = update.description;
+                document.getElementById('updateImpact').value = update.impact;
+                document.getElementById('updateDocLink').value = update.docLink;
+            }
+        }
+
+        function deleteUpdate(id) {
+            showConfirmationModal("Are you sure you want to delete this update?", () => {
+                dashboardData.updates = dashboardData.updates.filter(u => u.id !== id);
+                saveData();
+                renderUpdates();
+                showInfoModal("Update deleted successfully!");
+            });
+        }
+
+        // --- Export/Import Functions ---
+
+        /**
+         * Converts an array of objects to CSV string.
+         * @param {Array<Object>} data - The array of objects to convert.
+         * @returns {string} The CSV string.
+         */
+        function convertToCsv(data) {
+            if (!data || data.length === 0) return '';
+
+            // Get all unique headers from all objects to ensure comprehensive CSV
+            const allHeaders = new Set();
+            data.forEach(item => {
+                Object.keys(item).forEach(key => allHeaders.add(key));
+            });
+            const headers = Array.from(allHeaders);
+
+            const csvRows = [];
+            csvRows.push(headers.join(',')); // Add header row
+
+            for (const row of data) {
+                const values = headers.map(header => {
+                    const val = row[header];
+                    let escapedVal = '';
+                    if (Array.isArray(val)) {
+                        escapedVal = val.join(';'); // Join array elements with a semicolon
+                    } else if (val !== undefined && val !== null) {
+                        escapedVal = String(val).replace(/"/g, '""'); // Escape double quotes
+                    }
+                    // Enclose in quotes if contains comma, newline, or double quote
+                    if (escapedVal.includes(',') || escapedVal.includes('\n') || escapedVal.includes('"')) {
+                        return `"${escapedVal}"`;
+                    }
+                    return escapedVal;
+                });
+                csvRows.push(values.join(','));
+            }
+            return csvRows.join('\n');
+        }
+
+        /**
+         * Converts an array of objects to a readable TXT string.
+         * @param {Array<Object>} data - The array of objects to convert.
+         * @returns {string} The TXT string.
+         */
+        function convertToTxt(data) {
+            if (!data || data.length === 0) return 'No data available.';
+
+            let txtContent = '';
+            data.forEach((item, index) => {
+                txtContent += `--- Item ${index + 1} ---\n`;
+                for (const key in item) {
+                    let value = item[key];
+                    if (Array.isArray(value)) {
+                        value = value.join('; '); // Join array elements for TXT
+                    }
+                    txtContent += `${key}: ${value}\n`;
+                }
+                txtContent += '\n';
+            });
+            return txtContent;
+        }
+
+        /**
+         * Triggers a file download.
+         * @param {string} content - The content of the file.
+         * @param {string} filename - The desired filename.
+         * @param {string} mimeType - The MIME type of the file.
+         */
+        function downloadFile(content, filename, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a); // Required for Firefox
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        /**
+         * Exports data to specified format (CSV, TXT, JSON).
+         * @param {Array<Object>|Object} data - The data to export.
+         * @param {string} filenamePrefix - Prefix for the filename.
+         * @param {string} format - 'csv', 'txt', or 'json'.
+         */
+        function exportData(data, filenamePrefix, format) {
+            let content;
+            let mimeType;
+            let filename = `${filenamePrefix}_${new Date().toISOString().split('T')[0]}`;
+
+            if (format === 'csv') {
+                content = convertToCsv(Array.isArray(data) ? data : [data]); // Ensure data is an array for CSV
+                mimeType = 'text/csv';
+                filename += '.csv';
+            } else if (format === 'txt') {
+                content = convertToTxt(Array.isArray(data) ? data : [data]);
+                mimeType = 'text/plain';
+                filename += '.txt';
+            } else if (format === 'json') {
+                content = JSON.stringify(data, null, 2); // Pretty print JSON
+                mimeType = 'application/json';
+                filename += '.json';
+            } else {
+                console.error("Unsupported export format:", format);
+                return;
+            }
+
+            downloadFile(content, filename, mimeType);
+        }
+
+        /**
+         * Imports data from a file (CSV or JSON).
+         * @param {Event} event - The file input change event.
+         * @param {string} dataType - 'processes', 'dataNotes', 'projects', 'updates', or 'all'.
+         */
+        async function importData(event, dataType) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const content = e.target.result;
+                try {
+                    if (dataType === 'all') {
+                        // Import all data from JSON
+                        const importedDashboardData = JSON.parse(content);
+                        // Basic validation to ensure it's a valid dashboard structure
+                        if (importedDashboardData.processes && importedDashboardData.dataNotes &&
+                            importedDashboardData.projects && importedDashboardData.updates) {
+                            showConfirmationModal("Importing this JSON will overwrite ALL your current dashboard data. Are you sure?", () => {
+                                dashboardData = importedDashboardData;
+                                saveData();
+                                renderAllLists();
+                                showInfoModal("All dashboard data imported successfully!");
+                            });
+                        } else {
+                            showInfoModal("Invalid JSON file for full dashboard import. Please ensure it contains 'processes', 'dataNotes', 'projects', and 'updates' arrays.");
+                        }
+                    } else if (file.type === 'text/csv') {
+                        // Import CSV for specific section
+                        const parsedData = parseCsv(content);
+                        if (parsedData.length > 0) {
+                            showConfirmationModal(`Importing this CSV will add to your existing ${dataType} data. Are you sure?`, () => {
+                                // For processes, handle updateDates array
+                                if (dataType === 'processes') {
+                                    parsedData.forEach(item => {
+                                        if (typeof item.updateDates === 'string') {
+                                            item.updateDates = item.updateDates.split(';').map(d => d.trim()).filter(d => d);
+                                        } else {
+                                            item.updateDates = [];
+                                        }
+                                        item.id = generateUUID(); // Assign new UUIDs on import to avoid conflicts
+                                    });
+                                } else {
+                                    parsedData.forEach(item => item.id = generateUUID()); // Assign new UUIDs
+                                }
+                                dashboardData[dataType].push(...parsedData);
+                                saveData();
+                                renderAllLists();
+                                showInfoModal(`${parsedData.length} items imported into ${dataType} successfully!`);
+                            });
+                        } else {
+                            showInfoModal("CSV file is empty or could not be parsed.");
+                        }
+                    } else {
+                        showInfoModal("Unsupported file type for import. Please use JSON for full import or CSV for section-specific import.");
+                    }
+                } catch (error) {
+                    console.error("Error importing data:", error);
+                    showInfoModal("Error importing data. Please check file format.");
+                }
+                // Clear the file input value to allow re-importing the same file
+                event.target.value = '';
+            };
+
+            if (file.type === 'application/json' || file.type === 'text/csv') {
+                reader.readAsText(file);
+            } else {
+                showInfoModal("Unsupported file type selected. Please select a JSON or CSV file.");
+                event.target.value = ''; // Clear the file input
+            }
+        }
+
+        /**
+         * Parses a CSV string into an array of objects.
+         * Basic CSV parser, assumes first row is headers.
+         * @param {string} csvString - The CSV content.
+         * @returns {Array<Object>} An array of objects.
+         */
+        function parseCsv(csvString) {
+            const lines = csvString.split('\n').filter(line => line.trim() !== '');
+            if (lines.length === 0) return [];
+
+            const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, '')); // Remove quotes from headers
+            const result = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                // Use a more robust regex to handle quoted fields with commas and escaped quotes
+                const values = [];
+                let inQuote = false;
+                let currentVal = '';
+                for (let char of lines[i]) {
+                    if (char === '"') {
+                        if (inQuote && lines[i].indexOf('""', lines[i].indexOf(char) + 1) === lines[i].indexOf(char) + 1) {
+                            // Handle escaped double quote
+                            currentVal += '"';
+                            lines[i] = lines[i].substring(0, lines[i].indexOf(char) + 1) + lines[i].substring(lines[i].indexOf(char) + 2); // Advance past both quotes
+                        } else {
+                            inQuote = !inQuote;
+                        }
+                    } else if (char === ',' && !inQuote) {
+                        values.push(currentVal);
+                        currentVal = '';
+                    } else {
+                        currentVal += char;
+                    }
+                }
+                values.push(currentVal); // Add the last value
+
+                if (values.length !== headers.length) {
+                    console.warn(`Skipping row ${i + 1} due to mismatch in column count. Expected ${headers.length}, got ${values.length}.`);
+                    continue; // Skip malformed rows
+                }
+
+                const obj = {};
+                for (let j = 0; j < headers.length; j++) {
+                    let value = values[j].trim();
+                    // Remove surrounding quotes and unescape internal quotes
+                    if (value.startsWith('"') && value.endsWith('"')) {
+                        value = value.substring(1, value.length - 1).replace(/\"\"/g, '"');
+                    }
+                    obj[headers[j]] = value;
+                }
+                result.push(obj);
+            }
+            return result;
+        }
+
+        // --- KPI Calculation and Display ---
+
+        /**
+         * Updates the KPI values in the reports modal.
+         */
+        function updateKPIs() {
+            document.getElementById('kpiTotalProcesses').textContent = dashboardData.processes.length;
+            document.getElementById('kpiTotalDataNotes').textContent = dashboardData.dataNotes.length;
+            document.getElementById('kpiTotalProjects').textContent = dashboardData.projects.length;
+
+            const projectsToDo = dashboardData.projects.filter(p => p.status === 'To Do').length;
+            const projectsInProgress = dashboardData.projects.filter(p => p.status === 'In Progress').length;
+            const projectsDone = dashboardData.projects.filter(p => p.status === 'Done').length;
+
+            document.getElementById('kpiProjectsToDo').textContent = projectsToDo;
+            document.getElementById('kpiProjectsInProgress').textContent = projectsInProgress;
+            document.getElementById('kpiProjectsDone').textContent = projectsDone;
+
+            const processesAttention = dashboardData.processes.filter(p => p.specialAttentionNeeded === 'Yes').length;
+            document.getElementById('kpiProcessesAttention').textContent = processesAttention;
+
+
+            const today = new Date();
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(today.getDate() - 7);
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(today.getDate() - 30);
+
+            const dataNotesLast7Days = dashboardData.dataNotes.filter(note => {
+                const noteDate = new Date(note.date);
+                return noteDate >= sevenDaysAgo && noteDate <= today;
+            }).length;
+            document.getElementById('kpiDataNotesLast7Days').textContent = dataNotesLast7Days;
+
+            const updatesLast30Days = dashboardData.updates.filter(update => {
+                const updateDate = new Date(update.date);
+                return updateDate >= thirtyDaysAgo && updateDate <= today;
+            }).length;
+            document.getElementById('kpiUpdatesLast30Days').textContent = updatesLast30Days;
+        }
+
+        // --- Recent Activity Function ---
+        function renderRecentActivity() {
+            const recentActivityList = document.getElementById('recentActivityList');
+            recentActivityList.innerHTML = ''; // Clear existing list
+
+            const allActivities = [];
+
+            // Add processes
+            dashboardData.processes.forEach(p => {
+                allActivities.push({
+                    type: 'Process',
+                    name: p.name,
+                    date: p.lastUpdated,
+                    id: p.id,
+                    itemType: 'process',
+                    deadlineToResolve: p.specialAttentionNeeded === 'Yes' ? p.deadlineToResolve : null
+                });
+            });
+            // Add data notes
+            dashboardData.dataNotes.forEach(n => {
+                allActivities.push({
+                    type: 'Data Note',
+                    name: n.dataSource,
+                    date: n.lastUpdated,
+                    id: n.id,
+                    itemType: 'dataNote'
+                });
+            });
+            // Add projects
+            dashboardData.projects.forEach(proj => {
+                allActivities.push({
+                    type: 'Project',
+                    name: proj.projectName,
+                    date: proj.lastUpdated,
+                    id: proj.id,
+                    itemType: 'project',
+                    dueDate: proj.dueDate
+                });
+            });
+            // Add updates
+            dashboardData.updates.forEach(u => {
+                allActivities.push({
+                    type: 'Update',
+                    name: u.description,
+                    date: u.lastUpdated,
+                    id: u.id,
+                    itemType: 'update'
+                });
+            });
+
+            // Sort by date (most recent first)
+            allActivities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+            // Display top 10 recent activities
+            const displayCount = Math.min(allActivities.length, 10);
+            if (displayCount === 0) {
+                recentActivityList.innerHTML = '<p class="text-gray-500 text-sm">No recent activity.</p>';
+                return;
+            }
+
+            for (let i = 0; i < displayCount; i++) {
+                const activity = allActivities[i];
+                const activityDate = new Date(activity.date).toLocaleDateString();
+                const activityTime = new Date(activity.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                let additionalDateInfo = '';
+                if (activity.itemType === 'project' && activity.dueDate) {
+                    additionalDateInfo = ` (Due: ${activity.dueDate})`;
+                } else if (activity.itemType === 'process' && activity.deadlineToResolve) {
+                    additionalDateInfo = ` (Deadline: ${activity.deadlineToResolve})`;
+                }
+
+                const div = document.createElement('div');
+                div.className = 'bg-gray-50 p-3 rounded-lg shadow-sm border border-gray-200 text-sm cursor-pointer hover:bg-gray-100 transition duration-150';
+                div.innerHTML = `
+                    <span class="font-semibold text-blue-700">${activity.type}:</span> ${activity.name}${additionalDateInfo}
+                    <span class="text-gray-500 float-right">${activityDate} ${activityTime}</span>
+                `;
+                // Add click handler to navigate and open edit form
+                div.onclick = () => {
+                    let targetTabId;
+                    switch (activity.itemType) {
+                        case 'process': targetTabId = 'processLibrary'; break;
+                        case 'dataNote': targetTabId = 'dataAnalysis'; break;
+                        case 'project': targetTabId = 'projectTracker'; break;
+                        case 'update': targetTabId = 'updatesLog'; break;
+                    }
+                    openTab(targetTabId, null, activity.id, activity.itemType);
+                };
+                recentActivityList.appendChild(div);
+            }
+        }
+
+
+        // --- Search/Filter Function for Tables ---
+        function filterTable(listId, searchTerm) {
+            const tableContainer = document.getElementById(listId);
+            const table = tableContainer.querySelector('table');
+            if (!table) return; // No table found
+
+            const rows = table.querySelectorAll('tbody tr');
+            const filter = searchTerm.toLowerCase();
+
+            rows.forEach(row => {
+                let rowText = row.textContent.toLowerCase();
+                if (rowText.includes(filter)) {
+                    row.style.display = ''; // Show row
+                } else {
+                    row.style.display = 'none'; // Hide row
+                }
+            });
+        }
+
+        // --- Filter function for Recent Activity List ---
+        function filterRecentActivity(searchTerm) {
+            const listContainer = document.getElementById('recentActivityList');
+            const items = listContainer.querySelectorAll('.cursor-pointer'); // Select the clickable divs
+
+            const filter = searchTerm.toLowerCase();
+
+            items.forEach(item => {
+                let itemText = item.textContent.toLowerCase();
+                if (itemText.includes(filter)) {
+                    item.style.display = ''; // Show item
+                } else {
+                    item.style.display = 'none'; // Hide item
+                }
+            });
+        }
+
+
+        // --- Notification Bar Functions ---
+        function showNotification(message, type = 'warning') {
+            const notificationBar = document.getElementById('notificationBar');
+            notificationBar.textContent = message;
+            notificationBar.className = `notification ${type}`; // Apply type class
+            notificationBar.style.display = 'block';
+            setTimeout(() => {
+                notificationBar.style.display = 'none';
+            }, 5000); // Hide after 5 seconds
+        }
+
+        function checkDeadlinesAndAttention() {
+            const today = new Date();
+            let hasUrgent = false;
+            let hasWarning = false;
+            let urgentMessages = [];
+            let warningMessages = [];
+
+            // Check Projects
+            dashboardData.projects.forEach(project => {
+                if (project.status !== 'Done' && project.dueDate) {
+                    const dueDate = new Date(project.dueDate);
+                    const diffTime = dueDate.getTime() - today.getTime();
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                    if (diffDays <= 0) { // Deadline passed or today
+                        urgentMessages.push(`Project "${project.projectName}" is overdue!`);
+                        hasUrgent = true;
+                    } else if (diffDays <= 3) { // Deadline in 3 days or less
+                        warningMessages.push(`Project "${project.projectName}" due in ${diffDays} day(s)!`);
+                        hasWarning = true;
+                    }
+                }
+            });
+
+            // Check Processes needing special attention
+            dashboardData.processes.forEach(process => {
+                if (process.specialAttentionNeeded === 'Yes' && process.deadlineToResolve) {
+                    const deadlineDate = new Date(process.deadlineToResolve);
+                    const diffTime = deadlineDate.getTime() - today.getTime();
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                    if (diffDays <= 0) { // Deadline passed or today
+                        urgentMessages.push(`Process "${process.name}" needs urgent resolution!`);
+                        hasUrgent = true;
+                    } else if (diffDays <= 7) { // Deadline in 7 days or less
+                        warningMessages.push(`Process "${process.name}" resolution due in ${diffDays} day(s)!`);
+                        hasWarning = true;
+                    }
+                }
+            });
+
+            if (hasUrgent) {
+                showNotification(`URGENT: ${urgentMessages.join(' | ')}`, 'urgent');
+            } else if (hasWarning) {
+                showNotification(`REMINDER: ${warningMessages.join(' | ')}`, 'warning');
+            }
+        }
+
+
+        // --- Modal Functions (for alerts/confirms) ---
+
+        let currentConfirmationCallback = null;
+
+        /**
+         * Shows a custom confirmation modal.
+         * @param {string} message - The message to display.
+         * @param {Function} onConfirm - Callback to execute if confirmed.
+         */
+        function showConfirmationModal(message, onConfirm) {
+            currentConfirmationCallback = onConfirm;
+            const modal = document.getElementById('customAlertModal');
+            document.getElementById('customAlertTitle').textContent = "Confirmation";
+            document.getElementById('customAlertMessage').textContent = message;
+            document.getElementById('customAlertButtons').innerHTML = `
+                <button id="confirmCancelBtn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">Cancel</button>
+                <button id="confirmOkBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">OK</button>
+            `;
+            modal.style.display = 'flex';
+
+            document.getElementById('confirmOkBtn').onclick = () => {
+                if (currentConfirmationCallback) {
+                    currentConfirmationCallback();
+                }
+                modal.style.display = 'none';
+                currentConfirmationCallback = null;
+            };
+            document.getElementById('confirmCancelBtn').onclick = () => {
+                modal.style.display = 'none';
+                currentConfirmationCallback = null;
+            };
+        }
+
+        /**
+         * Shows a custom info modal (replaces alert).
+         * @param {string} message - The message to display.
+         */
+        function showInfoModal(message) {
+            const modal = document.getElementById('customAlertModal');
+            document.getElementById('customAlertTitle').textContent = "Information";
+            document.getElementById('customAlertMessage').textContent = message;
+            document.getElementById('customAlertButtons').innerHTML = `
+                <button id="alertOkBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">OK</button>
+            `;
+            modal.style.display = 'flex';
+
+            document.getElementById('alertOkBtn').onclick = () => {
+                modal.style.display = 'none';
+            };
+        }
+
+        // Close the modal if the user clicks outside of it
+        window.onclick = function(event) {
+            const customAlertModal = document.getElementById('customAlertModal');
+            if (customAlertModal && event.target == customAlertModal) {
+                customAlertModal.style.display = 'none';
+                currentConfirmationCallback = null; // Reset callback if confirmation modal is closed this way
+            }
+        }
+
+
+        // --- Event Listeners for Global Actions ---
+        document.getElementById('loadSampleDataBtn').addEventListener('click', loadSampleData);
+        document.getElementById('clearAllDataBtn').addEventListener('click', clearAllData);
+
+
+        // --- Initialize Dashboard on Load ---
+        document.addEventListener('DOMContentLoaded', () => {
+            dashboardData = loadData(); // Load data from localStorage on startup
+            renderAllLists(); // Render all sections with loaded data
+            openTab('processLibrary'); // Open the default tab on load
+        });
+
+    </script>
+</body>
+</html>
